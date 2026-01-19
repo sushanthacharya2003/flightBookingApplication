@@ -213,6 +213,303 @@ http://localhost:5000
 ```
 
 ---
+---
+
+## 🧪 API Testing (Using Postman)
+
+All functionalities of this Flight Booking Application were **manually tested using Postman** by sending HTTP requests and validating responses, cookies, database changes, and business logic behavior.
+
+Postman was used to test **authentication, authorization, flights, bookings, and seat management workflows**.
+
+---
+
+## 🔧 Testing Environment Setup
+
+Before testing APIs in Postman, the following setup was ensured:
+
+* MongoDB server running (`mongod`)
+* Backend server running (`npm run dev`)
+* `.env` file correctly configured
+* Cookies enabled in Postman
+
+Base URL used:
+
+```
+http://localhost:5000
+```
+
+---
+
+## 🔐 Authentication Testing (Postman)
+
+### 1️⃣ User Registration
+
+**Endpoint**
+
+```
+POST /api/auth/register
+```
+
+**Body (raw JSON)**
+
+```json
+{
+  "name": "Sush",
+  "email": "sush@test.com",
+  "password": "123456"
+}
+```
+
+**Expected Result**
+
+* Status: `201 Created`
+* Message: `User registered successfully`
+* User document created in MongoDB (`users` collection)
+
+---
+
+### 2️⃣ User Login
+
+**Endpoint**
+
+```
+POST /api/auth/login
+```
+
+**Body**
+
+```json
+{
+  "email": "sush@test.com",
+  "password": "123456"
+}
+```
+
+**Expected Result**
+
+* Status: `200 OK`
+* Message: `Login successful`
+* JWT token stored in **HTTP-only cookie**
+
+Postman was checked under:
+
+```
+Cookies → localhost → token
+```
+
+---
+
+### 3️⃣ Protected Route Testing
+
+**Endpoint**
+
+```
+GET /api/users/me
+```
+
+**Test Cases**
+
+* Without login → `401 Unauthorized`
+* After login → returns logged-in user details
+
+✔ Confirms authentication middleware is working.
+
+---
+
+## 👮 Authorization Testing (Role-Based)
+
+### Admin Role Setup (Mongo Shell)
+
+```js
+db.users.updateOne(
+  { email: "sush@test.com" },
+  { $set: { role: "admin" } }
+)
+```
+
+User logs in again to receive updated token.
+
+---
+
+### Admin-Only Route Test
+
+**Endpoint**
+
+```
+POST /api/flights
+```
+
+**Expected Behavior**
+
+* Admin user → allowed
+* Normal user → `403 Forbidden`
+
+✔ Confirms role-based authorization.
+
+---
+
+## ✈️ Flight Module Testing (Postman)
+
+### 1️⃣ Create Flight (Admin)
+
+```
+POST /api/flights
+```
+
+```json
+{
+  "flightNumber": "AI101",
+  "airline": "Air India",
+  "departureCity": "Bangalore",
+  "arrivalCity": "Delhi",
+  "departureDate": "2026-02-01T10:00:00Z",
+  "arrivalDate": "2026-02-01T12:30:00Z",
+  "price": 6500,
+  "availableSeats": 120,
+  "flightClass": "economy"
+}
+```
+
+✔ Flight created in `flights` collection.
+
+---
+
+### 2️⃣ Search Flights (Public)
+
+```
+GET /api/flights?departureCity=Bangalore&arrivalCity=Delhi
+```
+
+✔ Returns matching flights.
+
+---
+
+### 3️⃣ Pagination & Sorting Test
+
+```
+GET /api/flights?page=1&limit=5
+```
+
+✔ Confirms pagination works correctly.
+
+---
+
+## 📦 Booking Module Testing (Postman)
+
+### 1️⃣ Create Booking (User)
+
+```
+POST /api/bookings
+```
+
+**Body**
+
+```json
+{
+  "flightId": "<Mongo_Flight_ObjectId>",
+  "passengers": [
+    { "name": "A", "age": 25, "gender": "M" },
+    { "name": "B", "age": 22, "gender": "F" }
+  ]
+}
+```
+
+**Validations Performed**
+
+* Booking allowed only when seats are available
+* `availableSeats` reduced correctly
+* Booking stored in `bookings` collection
+
+---
+
+### 2️⃣ View Booking (Protected)
+
+```
+GET /api/bookings/:id
+```
+
+✔ Only the booking owner can access it.
+
+---
+
+### 3️⃣ Cancellation Request (User)
+
+```
+PUT /api/bookings/:id/cancel
+```
+
+✔ Booking status changes to `cancel_requested`.
+
+---
+
+### 4️⃣ Cancellation Approval (Admin)
+
+```
+PUT /api/bookings/:id/approve-cancel
+```
+
+✔ Booking status → `cancelled`
+✔ Flight seats restored correctly.
+
+---
+
+## 🪑 Seat Management Testing
+
+Seat availability was tested using Postman + MongoDB:
+
+**Scenarios**
+
+* Booking reduces seat count
+* Booking fails if seats are insufficient
+* Cancellation restores seats
+* Double cancellation prevented
+
+✔ Ensures correct inventory management.
+
+---
+
+## ❌ Negative & Edge Case Testing
+
+The following cases were tested in Postman:
+
+* Invalid flight ID
+* Booking without login
+* Admin routes accessed by user
+* Duplicate registration
+* Invalid JWT token
+* Accessing non-existent booking
+
+✔ Appropriate HTTP status codes and error messages returned.
+
+---
+
+## 🧠 Database Verification (Using mongosh)
+
+After API calls, MongoDB was verified using `mongosh`:
+
+```js
+use flight_booking
+db.users.find().pretty()
+db.flights.find().pretty()
+db.bookings.find().pretty()
+```
+
+✔ Confirms API operations correctly modify the database.
+
+---
+
+## ✅ Testing Conclusion
+
+> All APIs were tested manually using Postman with real request flows, cookie-based authentication, role validation, database verification, and business logic validation to ensure correctness, security, and consistency.
+
+---
+
+### 💡 Examiner / Interviewer Line (Use This)
+
+> “The project was fully tested using Postman by validating authentication, authorization, booking logic, and database consistency.”
+
+---
+
 
 ## 🧠 Key Learnings
 
